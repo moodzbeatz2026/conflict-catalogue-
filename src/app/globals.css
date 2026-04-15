@@ -1,26 +1,59 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-family-serif: Georgia, "Times New Roman", serif;
+  --font-family-sans: Inter, system-ui, sans-serif;
+  --max-width-article: 720px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  body {
+    @apply bg-white text-gray-900 antialiased;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  h1 {
+    @apply text-4xl font-bold tracking-tight;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply text-xl font-semibold;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .prose-incident img {
+    @apply rounded-lg;
+  }
+
+  .prose-incident a {
+    @apply text-blue-700 underline underline-offset-2 hover:text-blue-900;
+  }
+
+  .prose-incident p {
+    @apply text-lg leading-relaxed mb-4;
+  }
+
+  .prose-incident h2 {
+    @apply text-2xl font-semibold mt-8 mb-4;
+  }
+
+  .prose-incident h3 {
+    @apply text-xl font-semibold mt-6 mb-3;
+  }
+
+  .prose-incident blockquote {
+    @apply border-l-4 border-gray-300 pl-4 italic text-gray-700 my-4;
+  }
+
+  .prose-incident ul {
+    @apply list-disc pl-6 mb-4 space-y-1;
+  }
+
+  .prose-incident ol {
+    @apply list-decimal pl-6 mb-4 space-y-1;
+  }
 }
