@@ -40,31 +40,46 @@ export default async function IncidentPage({ params }: IncidentPageProps) {
   const { slug } = await params;
   const supabase = createServerClient();
 
-  // Fetch the incident with all relations
+  // Fetch the incident
   const { data: incident, error } = await supabase
     .from("incidents")
-    .select(
-      `
-      *,
-      conflict:conflicts(*),
-      perpetrator:entities!incidents_perpetrator_id_fkey(*),
-      sources(*),
-      images(*),
-      tags:tags!incident_tags(*),
-      affected_entities:entities!incident_affected_entities(*)
-    `
-    )
+    .select("*")
     .eq("slug", slug)
     .eq("status", "published")
     .single();
 
   if (error) {
-    console.error("Supabase query error:", error);
+    console.error("Supabase incident query error:", error);
   }
 
   if (!incident) notFound();
 
-  const typedIncident = incident as unknown as IncidentWithRelations;
+  // Fetch relations separately to avoid complex join issues
+  const [
+    { data: conflict },
+    { data: perpetrator },
+    { data: sources },
+    { data: images },
+    { data: tagRows },
+    { data: affectedRows },
+  ] = await Promise.all([
+    supabase.from("conflicts").select("*").eq("id", incident.conflict_id).single(),
+    supabase.from("entities").select("*").eq("id", incident.perpetrator_id).single(),
+    supabase.from("sources").select("*").eq("incident_id", incident.id).order("display_order"),
+    supabase.from("images").select("*").eq("incident_id", incident.id).order("display_order"),
+    supabase.from("incident_tags").select("tag_id, tags(*)").eq("incident_id", incident.id),
+    supabase.from("incident_affected_entities").select("entity_id, entities(*)").eq("incident_id", incident.id),
+  ]);
+
+  const fullIncident = {
+    ...incident,
+    conflict: conflict!,
+    perpetrator: perpetrator!,
+    sources: sources || [],
+    images: images || [],
+    tags: (tagRows || []).map((row: any) => row.tags),
+    affected_entities: (affectedRows || []).map((row: any) => row.entities),
+  } as unknown as IncidentWithRelations;
 
   // Fetch previous and next incidents for navigation
   const [{ data: prevData }, { data: nextData }] = await Promise.all([
@@ -88,13 +103,13 @@ export default async function IncidentPage({ params }: IncidentPageProps) {
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8">
-      <IncidentHeader incident={typedIncident} />
+      <IncidentHeader incident={fullIncident} />
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
         <div>
-          <ImageGallery images={typedIncident.images} />
-          <IncidentBody body={typedIncident.body} />
-          <SourcesList sources={typedIncident.sources} />
+          <ImageGallery images={fullIncident.images} />
+          <IncidentBody body={fullIncident.body} />
+          <SourcesList sources={fullIncident.sources} />
           <IncidentNav
             previous={prevData ? { slug: prevData.slug, title: prevData.title } : null}
             next={nextData ? { slug: nextData.slug, title: nextData.title } : null}
@@ -102,7 +117,7 @@ export default async function IncidentPage({ params }: IncidentPageProps) {
         </div>
 
         <div className="lg:sticky lg:top-8 lg:self-start">
-          <IncidentSidebar incident={typedIncident} />
+          <IncidentSidebar incident={fullIncident} />
         </div>
       </div>
     </article>
