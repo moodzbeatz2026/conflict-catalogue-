@@ -3,6 +3,8 @@ import { TimelineList } from "@/components/timeline/timeline-list";
 import { TimelineFilters } from "@/components/timeline/timeline-filters";
 import type { TimelineEntry, Tag } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 const PAGE_SIZE = 20;
 
 interface TimelinePageProps {

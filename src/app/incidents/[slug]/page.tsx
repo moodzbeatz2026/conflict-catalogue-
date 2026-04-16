@@ -9,7 +9,7 @@ import { SourcesList } from "@/components/incident/sources-list";
 import { IncidentNav } from "@/components/incident/incident-nav";
 import type { IncidentWithRelations } from "@/lib/types";
 
-export const revalidate = 3600; // ISR: revalidate every hour
+export const dynamic = "force-dynamic";
 
 interface IncidentPageProps {
   params: Promise<{ slug: string }>;
@@ -41,7 +41,7 @@ export default async function IncidentPage({ params }: IncidentPageProps) {
   const supabase = createServerClient();
 
   // Fetch the incident with all relations
-  const { data: incident } = await supabase
+  const { data: incident, error } = await supabase
     .from("incidents")
     .select(
       `
@@ -57,6 +57,10 @@ export default async function IncidentPage({ params }: IncidentPageProps) {
     .eq("slug", slug)
     .eq("status", "published")
     .single();
+
+  if (error) {
+    console.error("Supabase query error:", error);
+  }
 
   if (!incident) notFound();
 
